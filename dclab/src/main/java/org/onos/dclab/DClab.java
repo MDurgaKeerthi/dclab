@@ -433,7 +433,7 @@ public class DClab {
      * @param count     Number of linear topologies to overlay
      * @return          List of count linear topologies, each with specified length
      */
-    private List<Graph<TopologyVertex, DefaultEdge>> createLinearTopos(Graph<TopologyVertex, DefaultEdge> graph, int length, int count) {
+    private List<Graph<TopologyVertex, DefaultEdge>> createLinearTopos1(Graph<TopologyVertex, DefaultEdge> graph, int length, int count) {
         /* Repeatedly use longest path to segment graph until longest path is of specified length or less */
         while(true) {
             int max = 0;
@@ -508,6 +508,48 @@ public class DClab {
         }
         return topos;
     }
+
+
+    /**
+     * Create linear topologies using parameters supplied in configuration file
+     * @param graph     Graph that overlays are being constructed from
+     * @param length    Number of nodes in each linear topology being overlayed
+     * @param count     Number of linear topologies to overlay
+     * @return          List of count linear topologies, each with specified length
+     */
+    private List<Graph<TopologyVertex, DefaultEdge>> createLinearTopos(Graph<TopologyVertex, DefaultEdge> graph, int length, int count) {
+        List<Graph<TopologyVertex, DefaultEdge>> topos = new ArrayList<>();
+        List<TopologyVertex> addedVertices = new ArrayList<>();
+        List<Graph<TopologyVertex, DefaultEdge>> topos = new ArrayList<>();
+        int counter = 0;
+        
+        while(counter < count){
+            //pick a random vertex
+            TopologyVertex v = graph.vertexSet()[0];
+            TopologyVertex neighbour;
+            int pathLength = 0;
+
+            Graph<TopologyVertex, DefaultEdge> tempTopo = new SimpleGraph<>(DefaultEdge.class);
+            while(pathLength < length){
+                //get a neighbour
+                neighbour = Graphs.neighborListOf(graph, v)[0];
+                //add neighbour to path
+                tempTopo.addVertex(v);
+                tempTopo.addEdge(graph.getEdgeSource(v), graph.getEdgeTarget(neighbour));
+                //remove the vertex //can we keep the vertex and just use it for forwarding??
+                graph.removeVertex(v);
+                v = neighbour;
+                pathLength++;
+            }
+            tempTopo.addVertex(v);
+            topos.add(tempTopo);
+            counter++;
+        }
+
+        return topos;
+    }
+
+
 
     /**
      * Calculate closest pairwise distances between components, and the vertices with that distance
