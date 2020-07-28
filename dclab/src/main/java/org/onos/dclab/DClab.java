@@ -523,29 +523,47 @@ public class DClab {
         List<TopologyVertex> addedVertices = new ArrayList<>();
         int counter = 0;
         TopologyVertex neighbour;
+
+	for(DefaultEdge x : graph.edgeSet()){
+		System.out.println("edges  "+x);
+	}
+
+	for(TopologyVertex x : graph.vertexSet()){
+		System.out.println("vertices  "+x);
+	}
             
         while(counter < count){
             //pick a random vertex
             for (TopologyVertex v : graph.vertexSet()) {
                 int pathLength = 0;
-                System.out.println(counter);
-                System.out.println(v);
+                System.out.println("counter: "+counter);
+                System.out.println("current vertex: "+v);
 
                 Graph<TopologyVertex, DefaultEdge> tempTopo = new SimpleGraph<>(DefaultEdge.class);
+		tempTopo.addVertex(v);
                 while(pathLength < length){
                     //get a neighbour
                     neighbour = Graphs.neighborListOf(graph, v).get(0);
-                    System.out.println(neighbour);
+	
+                    System.out.println("neighbour picked: "+neighbour+"  yes? "+graph.containsVertex(neighbour));
                     
                     //add neighbour to path
-                    tempTopo.addVertex(v);
-                    tempTopo.addEdge(v, neighbour);
+                    tempTopo.addVertex(neighbour);
+		    if(graph.containsEdge(v, neighbour))
+                    	tempTopo.addEdge(v, neighbour);
+		    else{
+			tempTopo.addEdge(neighbour,v);
+			TopologyVertex swap = v;
+			v = neighbour;
+			neighbour = swap;
+                    }
+			
                     //remove the vertex //can we keep the vertex and just use it for forwarding??
                     graph.removeVertex(v);
                     v = neighbour;
                     pathLength++;
                 }
-                tempTopo.addVertex(v);
+                //tempTopo.addVertex(v);
                 topos.add(tempTopo);
                 counter++;
             }
