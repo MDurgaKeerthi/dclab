@@ -526,24 +526,29 @@ public class DClab {
             
         while(counter < count){
             //pick a random vertex
-            TopologyVertex v = graph.vertexSet().iterator().next();
-            int pathLength = 0;
+            for (TopologyVertex v : graph.vertexSet()) {
+                int pathLength = 0;
+                System.out.println(counter);
+                System.out.println(v);
 
-            Graph<TopologyVertex, DefaultEdge> tempTopo = new SimpleGraph<>(DefaultEdge.class);
-            while(pathLength < length){
-                //get a neighbour
-                neighbour = Graphs.neighborListOf(graph, v).get(0);
-                //add neighbour to path
+                Graph<TopologyVertex, DefaultEdge> tempTopo = new SimpleGraph<>(DefaultEdge.class);
+                while(pathLength < length){
+                    //get a neighbour
+                    neighbour = Graphs.neighborListOf(graph, v).get(0);
+                    System.out.println(neighbour);
+                    
+                    //add neighbour to path
+                    tempTopo.addVertex(v);
+                    tempTopo.addEdge(v, neighbour);
+                    //remove the vertex //can we keep the vertex and just use it for forwarding??
+                    graph.removeVertex(v);
+                    v = neighbour;
+                    pathLength++;
+                }
                 tempTopo.addVertex(v);
-                tempTopo.addEdge(v, neighbour);
-                //remove the vertex //can we keep the vertex and just use it for forwarding??
-                graph.removeVertex(v);
-                v = neighbour;
-                pathLength++;
+                topos.add(tempTopo);
+                counter++;
             }
-            tempTopo.addVertex(v);
-            topos.add(tempTopo);
-            counter++;
         }
 
         return topos;
