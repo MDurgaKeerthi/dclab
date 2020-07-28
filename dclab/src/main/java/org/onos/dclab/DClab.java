@@ -434,7 +434,7 @@ public class DClab {
      * @param count     Number of linear topologies to overlay
      * @return          List of count linear topologies, each with specified length
      */
-    private List<Graph<TopologyVertex, DefaultEdge>> createLinearTopos(Graph<TopologyVertex, DefaultEdge> graph, int length, int count) {
+    private List<Graph<TopologyVertex, DefaultEdge>> createLinearTopos1(Graph<TopologyVertex, DefaultEdge> graph, int length, int count) {
         /* Repeatedly use longest path to segment graph until longest path is of specified length or less */
         while(true) {
             int max = 0;
@@ -518,7 +518,7 @@ public class DClab {
      * @param count     Number of linear topologies to overlay
      * @return          List of count linear topologies, each with specified length
      */
-    private List<Graph<TopologyVertex, DefaultEdge>> createLinearTopos1(Graph<TopologyVertex, DefaultEdge> graph, int length, int count) {
+    private List<Graph<TopologyVertex, DefaultEdge>> createLinearTopos(Graph<TopologyVertex, DefaultEdge> graph, int length, int count) {
         List<Graph<TopologyVertex, DefaultEdge>> topos = new ArrayList<>();
         List<TopologyVertex> addedVertices = new ArrayList<>();
         int counter = 0;
