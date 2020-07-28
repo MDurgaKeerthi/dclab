@@ -6,6 +6,7 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import org.apache.felix.scr.annotations.*;
 import org.jgrapht.Graph;
+import org.jgrapht.Graphs;
 import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.graph.DefaultEdge;
@@ -433,7 +434,7 @@ public class DClab {
      * @param count     Number of linear topologies to overlay
      * @return          List of count linear topologies, each with specified length
      */
-    private List<Graph<TopologyVertex, DefaultEdge>> createLinearTopos1(Graph<TopologyVertex, DefaultEdge> graph, int length, int count) {
+    private List<Graph<TopologyVertex, DefaultEdge>> createLinearTopos(Graph<TopologyVertex, DefaultEdge> graph, int length, int count) {
         /* Repeatedly use longest path to segment graph until longest path is of specified length or less */
         while(true) {
             int max = 0;
@@ -517,25 +518,24 @@ public class DClab {
      * @param count     Number of linear topologies to overlay
      * @return          List of count linear topologies, each with specified length
      */
-    private List<Graph<TopologyVertex, DefaultEdge>> createLinearTopos(Graph<TopologyVertex, DefaultEdge> graph, int length, int count) {
+    private List<Graph<TopologyVertex, DefaultEdge>> createLinearTopos1(Graph<TopologyVertex, DefaultEdge> graph, int length, int count) {
         List<Graph<TopologyVertex, DefaultEdge>> topos = new ArrayList<>();
         List<TopologyVertex> addedVertices = new ArrayList<>();
-        List<Graph<TopologyVertex, DefaultEdge>> topos = new ArrayList<>();
         int counter = 0;
-        
+        TopologyVertex neighbour;
+            
         while(counter < count){
             //pick a random vertex
-            TopologyVertex v = graph.vertexSet()[0];
-            TopologyVertex neighbour;
+            TopologyVertex v = graph.vertexSet().iterator().next();
             int pathLength = 0;
 
             Graph<TopologyVertex, DefaultEdge> tempTopo = new SimpleGraph<>(DefaultEdge.class);
             while(pathLength < length){
                 //get a neighbour
-                neighbour = Graphs.neighborListOf(graph, v)[0];
+                neighbour = Graphs.neighborListOf(graph, v).get(0);
                 //add neighbour to path
                 tempTopo.addVertex(v);
-                tempTopo.addEdge(graph.getEdgeSource(v), graph.getEdgeTarget(neighbour));
+                tempTopo.addEdge(v, neighbour);
                 //remove the vertex //can we keep the vertex and just use it for forwarding??
                 graph.removeVertex(v);
                 v = neighbour;
