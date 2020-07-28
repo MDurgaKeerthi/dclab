@@ -532,12 +532,14 @@ public class DClab {
     		System.out.println("vertices  "+x);
     	}
 
+        System.out.println("length "+length+" count "+count);
             
         while(counter < count){
             //pick a vertex
             for (TopologyVertex v : graph.vertexSet()) {
                 if (!addedVertices.contains(v)) {
                     int pathLength = 0;
+                    boolean foundPath = true;
                     System.out.println("counter: "+counter);
                     System.out.println("current vertex: "+v);
 
@@ -551,6 +553,9 @@ public class DClab {
                         while (addedVertices.contains(neighbour) && i<Graphs.neighborListOf(graph, v).size()) {
                             neighbour = Graphs.neighborListOf(graph, v).get(i);
                             i++;
+                        }
+                        if (i==Graphs.neighborListOf(graph, v).size()) {
+                            foundPath = false;
                         }
     	
                         System.out.println("neighbour picked: "+neighbour+"  yes? "+graph.containsVertex(neighbour));
@@ -571,9 +576,10 @@ public class DClab {
                         v = neighbour;
                         pathLength++;
                     }
-                    //tempTopo.addVertex(v);
-                    topos.add(tempTopo);
-                    counter++;
+                    if (foundPath) {
+                        topos.add(tempTopo);
+                        counter++;
+                    }                    
                 }
             }
         }
