@@ -524,48 +524,57 @@ public class DClab {
         int counter = 0;
         TopologyVertex neighbour;
 
-	for(DefaultEdge x : graph.edgeSet()){
-		System.out.println("edges  "+x);
-	}
+    	for(DefaultEdge x : graph.edgeSet()){
+    		System.out.println("edges  "+x);
+    	}
 
-	for(TopologyVertex x : graph.vertexSet()){
-		System.out.println("vertices  "+x);
-	}
+    	for(TopologyVertex x : graph.vertexSet()){
+    		System.out.println("vertices  "+x);
+    	}
+
             
         while(counter < count){
-            //pick a random vertex
+            //pick a vertex
             for (TopologyVertex v : graph.vertexSet()) {
-                int pathLength = 0;
-                System.out.println("counter: "+counter);
-                System.out.println("current vertex: "+v);
+                if (!addedVertices.contains(v)) {
+                    int pathLength = 0;
+                    System.out.println("counter: "+counter);
+                    System.out.println("current vertex: "+v);
 
-                Graph<TopologyVertex, DefaultEdge> tempTopo = new SimpleGraph<>(DefaultEdge.class);
-		tempTopo.addVertex(v);
-                while(pathLength < length){
-                    //get a neighbour
-                    neighbour = Graphs.neighborListOf(graph, v).get(0);
-	
-                    System.out.println("neighbour picked: "+neighbour+"  yes? "+graph.containsVertex(neighbour));
+                    Graph<TopologyVertex, DefaultEdge> tempTopo = new SimpleGraph<>(DefaultEdge.class);
+    		        tempTopo.addVertex(v);
                     
-                    //add neighbour to path
-                    tempTopo.addVertex(neighbour);
-		    if(graph.containsEdge(v, neighbour))
-                    	tempTopo.addEdge(v, neighbour);
-		    else{
-			tempTopo.addEdge(neighbour,v);
-			TopologyVertex swap = v;
-			v = neighbour;
-			neighbour = swap;
+                    while(pathLength < length){
+                        //get a neighbour
+                        neighbour = Graphs.neighborListOf(graph, v).get(0);
+                        int i = 1;
+                        while (addedVertices.contains(neighbour) && i<Graphs.neighborListOf(graph, v).size()) {
+                            neighbour = Graphs.neighborListOf(graph, v).get(i);
+                            i++;
+                        }
+    	
+                        System.out.println("neighbour picked: "+neighbour+"  yes? "+graph.containsVertex(neighbour));
+                        
+                        //add neighbour to path
+                        tempTopo.addVertex(neighbour);
+            		    if(graph.containsEdge(v, neighbour))
+                            tempTopo.addEdge(v, neighbour);
+            		    else{
+                			tempTopo.addEdge(neighbour,v);
+                			TopologyVertex swap = v;
+                			v = neighbour;
+                			neighbour = swap;
+                        }
+    			
+                        //remove the vertex //can we keep the vertex and just use it for forwarding??
+                        addedVertices.add(v);
+                        v = neighbour;
+                        pathLength++;
                     }
-			
-                    //remove the vertex //can we keep the vertex and just use it for forwarding??
-                    graph.removeVertex(v);
-                    v = neighbour;
-                    pathLength++;
+                    //tempTopo.addVertex(v);
+                    topos.add(tempTopo);
+                    counter++;
                 }
-                //tempTopo.addVertex(v);
-                topos.add(tempTopo);
-                counter++;
             }
         }
 
