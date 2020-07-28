@@ -548,6 +548,11 @@ public class DClab {
                     
                     while(pathLength < length){
                         //get a neighbour
+                        if (Graphs.neighborListOf(graph, v).size() == 0) {
+                            foundPath = false;
+                            break;
+                        }
+                        
                         neighbour = Graphs.neighborListOf(graph, v).get(0);
                         int i = 1;
                         while (addedVertices.contains(neighbour) && i<Graphs.neighborListOf(graph, v).size()) {
