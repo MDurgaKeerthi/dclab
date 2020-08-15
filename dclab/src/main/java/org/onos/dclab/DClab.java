@@ -6,6 +6,7 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import org.apache.felix.scr.annotations.*;
 import org.jgrapht.Graph;
+import org.jgrapht.Graphs;
 import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.graph.DefaultEdge;
@@ -204,11 +205,10 @@ public class DClab {
             graph.addVertex(v);
         }
         for (TopologyEdge e : topoGraph.getEdges()) {
-            if (DijkstraShortestPath.findPathBetween(graph, e.src(), e.dst()) == null) {
+            //if (DijkstraShortestPath.findPathBetween(graph, e.src(), e.dst()) == null) 
                 graph.addEdge(e.src(), e.dst());
-            }
         }
-        log.info(graph.toString());
+        //log.info(graph.toString());
 
         try {
             JsonArray config = Json.parse(new BufferedReader(
@@ -228,7 +228,9 @@ public class DClab {
                     case "linear":
                         int length = spec.getInt("length", 3);
                         count = spec.getInt("count", 1000);
-                        topos = createLinearTopos(graph, length, count);
+                        int physicalBandwidth = spec.getInt("physicalBandwidth", 3);
+                        int logicalBandwidth = spec.getInt("logicalBandwidth", 3);
+                        topos = createLinearTopos(graph, length, count, physicalBandwidth, logicalBandwidth);
                         break;
                     case "star":
                         int points = spec.getInt("points", 3);
@@ -433,7 +435,7 @@ public class DClab {
      * @param count     Number of linear topologies to overlay
      * @return          List of count linear topologies, each with specified length
      */
-    private List<Graph<TopologyVertex, DefaultEdge>> createLinearTopos(Graph<TopologyVertex, DefaultEdge> graph, int length, int count) {
+    private List<Graph<TopologyVertex, DefaultEdge>> createLinearTopos1(Graph<TopologyVertex, DefaultEdge> graph, int length, int count) {
         /* Repeatedly use longest path to segment graph until longest path is of specified length or less */
         while(true) {
             int max = 0;
@@ -508,6 +510,119 @@ public class DClab {
         }
         return topos;
     }
+
+
+    private TopologyVertex getNextVertex(Graph<TopologyVertex, DefaultEdge> localgraph, TopologyVertex v, int status[], 
+                                            List<TopologyVertex> addedVertices){
+        status[0] = -1;
+        String vString = v.toString();
+        String vRingId = vString.substring(vString.length() - 1);
+        int vId = Integer.parseInt(vString.substring(3,vString.length() - 1));
+        int mindistance = (int)localgraph.vertexSet().size()+1;
+        TopologyVertex candidate = v;
+        for (TopologyVertex neighbour : Graphs.neighborListOf(localgraph, v)) {
+            String neighbourStr = neighbour.toString();
+            //System.out.println("neighbours of "+vString+"  :  "+neighbourStr);        
+            String neighbourRingId = neighbourStr.substring(neighbourStr.length() - 1);
+            int neighbourId = Integer.parseInt(neighbourStr.substring(3,neighbourStr.length() - 1));
+            if (!addedVertices.contains(neighbour) && neighbourRingId.equals(vRingId)) {
+                if (Math.abs(vId - neighbourId) < mindistance) {
+                    mindistance = Math.abs(vId - neighbourId);
+                    candidate = neighbour;
+                    status[0] = 1;
+                }
+            }
+            else{
+                if (!addedVertices.contains(neighbour) && 
+                    (int)localgraph.vertexSet().size()/2 + Math.abs(vId - neighbourId) < mindistance) {
+                    mindistance = (int)localgraph.vertexSet().size() + Math.abs(vId - neighbourId);
+                    candidate = neighbour;
+                    status[0] = 1;
+                }
+            }
+        }
+        return candidate;
+    }
+
+
+    /**
+     * Create linear topologies using parameters supplied in configuration file
+     * @param graph     Graph that overlays are being constructed from
+     * @param length    Number of nodes in each linear topology being overlayed
+     * @param count     Number of linear topologies to overlay
+     * @return          List of count linear topologies, each with specified length
+     */
+    private List<Graph<TopologyVertex, DefaultEdge>> createLinearTopos(Graph<TopologyVertex, DefaultEdge> localGraph, 
+                                                                        int length, int count, int physicalBandwidth, int logicalBandwidth) {
+        List<Graph<TopologyVertex, DefaultEdge>> topos = new ArrayList<>();
+        List<TopologyVertex> addedVertices = new ArrayList<>();
+        int counter = 0;
+        TopologyVertex nextVertex;
+
+        for(DefaultEdge x : localGraph.edgeSet()){
+            //System.out.println("edges  "+x + "  "+ localGraph.getEdgeWeight(x));
+            localGraph.setEdgeWeight(x, (double)physicalBandwidth);
+        }
+
+        int loopstopper = 0;
+        while(counter < count && loopstopper < localGraph.vertexSet().size()){
+            //pick a vertex
+            loopstopper = 0;
+            for (TopologyVertex v : localGraph.vertexSet()) {
+                loopstopper++;
+                if (!addedVertices.contains(v)) {
+                    int pathLength = 0;
+                    boolean foundPath = true;
+                    List<TopologyVertex> pathVertices = new ArrayList<>();
+                    Graph<TopologyVertex, DefaultEdge> tempTopo = new SimpleGraph<>(DefaultEdge.class);
+                    tempTopo.addVertex(v);
+                    addedVertices.add(v);
+                    pathVertices.add(v);
+                    
+                    while(pathLength < length-1){
+                        //get a neighbour
+                        if (Graphs.neighborListOf(localGraph, v).size() == 0) {
+                            log.info("zero");
+                            foundPath = false;
+                            break;
+                        }
+                        
+                        int status[] = {1};
+                        nextVertex = getNextVertex(localGraph, v, status, addedVertices);
+                        if (status[0] == -1) {
+                            log.info("breaking");
+                            foundPath = false;
+                            break;
+                        }
+        
+                        //add neighbour to path
+                        tempTopo.addVertex(nextVertex);
+                        tempTopo.addEdge(v, nextVertex);
+                        
+                        //remove the vertex //can we keep the vertex and just use it for forwarding??
+                        addedVertices.add(nextVertex);
+                        pathVertices.add(nextVertex);
+                        v = nextVertex;
+                        pathLength++;
+                    }
+                    if (foundPath) {
+                        loopstopper = 0;
+                        topos.add(tempTopo);
+                        counter++;
+                    }    
+                    else{
+                        for(TopologyVertex x : pathVertices){
+                            addedVertices.remove(x);
+                        }   
+                    }                
+                }
+            }
+        }
+        
+        log.info("Number of logical topologies mapped: "+topos.size());
+        return topos;
+    }
+
 
     /**
      * Calculate closest pairwise distances between components, and the vertices with that distance
