@@ -1,8 +1,9 @@
 [
     {
-        "type": "tree",
-        "depth": 3,
-        "fanout": 2,
-        "count": 1
+        "count": 2, 
+        "logicalBandwidth": 2, 
+        "length": 2, 
+        "type": "linear", 
+        "physicalBandwidth": 4
     }
 ]

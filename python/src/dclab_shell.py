@@ -33,18 +33,24 @@ class DClabShell(Cmd):
         if parsed[0] == "linear":
             self.config.append({"type": parsed[0],
                                 "length": int(parsed[1]),
-                                "count": int(parsed[2])})
+                                "count": int(parsed[2]),
+                                "physicalBandwidth": int(parsed[3]),
+                                "logicalBandwidth": int(parsed[4])})
 
         if parsed[0] == "star":
             self.config.append({"type": parsed[0],
                                 "points": int(parsed[1]),
-                                "count": int(parsed[2])})
+                                "count": int(parsed[2]),
+                                "physicalBandwidth": int(parsed[3]),
+                                "logicalBandwidth": int(parsed[4])})
 
         if parsed[0] == "tree":
             self.config.append({"type": parsed[0],
                                 "depth": int(parsed[1]),
                                 "fanout": int(parsed[2]),
-                                "count": int(parsed[3])})
+                                "count": int(parsed[3]),
+                                "physicalBandwidth": int(parsed[4]),
+                                "logicalBandwidth": int(parsed[5])})
 
     def do_write(self, inp):
         '''Write current configuration to either a specified file or to default location
@@ -64,13 +70,13 @@ class DClabShell(Cmd):
 
     def do_run(self, inp):
         '''Run DClab using currently saved configuration file'''
-        os.system("/opt/onos/bin/onos-app 127.0.0.1 uninstall org.onosproject.dclab")
+        os.system("~/onos-2.1.0/bin/onos-app 127.0.0.1 uninstall org.onosproject.dclab")
         time.sleep(1)
-        os.system("/opt/onos/bin/onos-app 127.0.0.1 reinstall! ~/dclab-source/dclab/target/onos-app-dclab-2.1.0.oar ")
+        os.system("~/onos-2.1.0/bin/onos-app 127.0.0.1 reinstall! ~/dclab-source/dclab/target/onos-app-dclab-2.1.0.oar ")
 
     def do_clear(self, inp):
         '''Remove the current overlay from the network'''
-        os.system("/opt/onos/bin/onos-app 127.0.0.1 uninstall org.onosproject.dclab")
+        os.system("~/onos-2.1.0/bin/onos-app 127.0.0.1 uninstall org.onosproject.dclab")
 
     def do_apply(self, inp):
         '''Write current configuration to default location, then run DClab'''

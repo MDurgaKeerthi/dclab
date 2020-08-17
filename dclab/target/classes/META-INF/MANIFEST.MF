@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-Bnd-LastModified: 1597530905804
+Bnd-LastModified: 1597692046236
 Build-Jdk: 11.0.8
 Built-By: ubuntu
 Bundle-Description: DClab Application

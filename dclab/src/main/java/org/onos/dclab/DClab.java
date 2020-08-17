@@ -511,9 +511,8 @@ public class DClab {
         return topos;
     }
 
-
-    private TopologyVertex getNextVertex(Graph<TopologyVertex, DefaultEdge> localgraph, TopologyVertex v, int status[], 
-                                            List<TopologyVertex> addedVertices){
+ private TopologyVertex getNextVertex(Graph<TopologyVertex, DefaultEdge> localgraph, TopologyVertex v, int status[], 
+                                            List<TopologyVertex> pathVertices, int logicalBandwidth){
         status[0] = -1;
         String vString = v.toString();
         String vRingId = vString.substring(vString.length() - 1);
@@ -525,25 +524,29 @@ public class DClab {
             //System.out.println("neighbours of "+vString+"  :  "+neighbourStr);        
             String neighbourRingId = neighbourStr.substring(neighbourStr.length() - 1);
             int neighbourId = Integer.parseInt(neighbourStr.substring(3,neighbourStr.length() - 1));
-            if (!addedVertices.contains(neighbour) && neighbourRingId.equals(vRingId)) {
-                if (Math.abs(vId - neighbourId) < mindistance) {
-                    mindistance = Math.abs(vId - neighbourId);
-                    candidate = neighbour;
-                    status[0] = 1;
+            DefaultEdge e = localgraph.getEdge(v, neighbour);
+            int newWeight = (int)localgraph.getEdgeWeight(e) - logicalBandwidth;
+            if (newWeight >= 0 ) {
+                if (!pathVertices.contains(neighbour) && neighbourRingId.equals(vRingId)) {
+                    if (Math.abs(vId - neighbourId) < mindistance) {
+                        mindistance = Math.abs(vId - neighbourId);
+                        candidate = neighbour;
+                        status[0] = 1;
+                    }
                 }
-            }
-            else{
-                if (!addedVertices.contains(neighbour) && 
-                    (int)localgraph.vertexSet().size()/2 + Math.abs(vId - neighbourId) < mindistance) {
-                    mindistance = (int)localgraph.vertexSet().size() + Math.abs(vId - neighbourId);
-                    candidate = neighbour;
-                    status[0] = 1;
+                else{
+                    if (!pathVertices.contains(neighbour) && 
+                        (int)localgraph.vertexSet().size()/2 + Math.abs(vId - neighbourId) < mindistance) {
+                        mindistance = (int)localgraph.vertexSet().size() + Math.abs(vId - neighbourId);
+                        candidate = neighbour;
+                        status[0] = 1;
+                    }
                 }
             }
         }
         return candidate;
     }
-
+   
 
     /**
      * Create linear topologies using parameters supplied in configuration file
@@ -576,7 +579,7 @@ public class DClab {
                     List<TopologyVertex> pathVertices = new ArrayList<>();
                     Graph<TopologyVertex, DefaultEdge> tempTopo = new SimpleGraph<>(DefaultEdge.class);
                     tempTopo.addVertex(v);
-                    addedVertices.add(v);
+                    // addedVertices.add(v);
                     pathVertices.add(v);
                     
                     while(pathLength < length-1){
@@ -588,9 +591,9 @@ public class DClab {
                         }
                         
                         int status[] = {1};
-                        nextVertex = getNextVertex(localGraph, v, status, addedVertices);
+                        nextVertex = getNextVertex(localGraph, v, status, pathVertices, logicalBandwidth);
                         if (status[0] == -1) {
-                            log.info("breaking");
+                            log.info("Could not find next vertex -_-");
                             foundPath = false;
                             break;
                         }
@@ -600,26 +603,45 @@ public class DClab {
                         tempTopo.addEdge(v, nextVertex);
                         
                         //remove the vertex //can we keep the vertex and just use it for forwarding??
-                        addedVertices.add(nextVertex);
+                        // addedVertices.add(nextVertex);
                         pathVertices.add(nextVertex);
                         v = nextVertex;
                         pathLength++;
                     }
                     if (foundPath) {
+                        //update edge wieghts of physical graph
+                        TopologyVertex localV = pathVertices.get(0);
+                        TopologyVertex vNext; 
+                        int localCounter = 1;
+                        while(localCounter < pathVertices.size()){
+                            vNext = pathVertices.get(localCounter);
+                            DefaultEdge e = localGraph.getEdge(localV, vNext);
+                            int newWeight = (int)localGraph.getEdgeWeight(e) - logicalBandwidth;
+                            System.out.println(newWeight);
+                            if (newWeight < 0) {
+                                log.info("could not find a logical topology");
+                                foundPath = false;
+                                break;
+                            }
+                            else if (newWeight == 0) {
+                                localGraph.removeEdge(e);
+                            }
+                            else
+                                localGraph.setEdgeWeight(e, newWeight);
+                           
+                            localCounter++;
+                            localV = vNext;
+                        } 
+
                         loopstopper = 0;
                         topos.add(tempTopo);
-                        counter++;
-                    }    
-                    else{
-                        for(TopologyVertex x : pathVertices){
-                            addedVertices.remove(x);
-                        }   
-                    }                
+                        counter++;  
+                    }                 
                 }
             }
         }
         
-        log.info("Number of logical topologies mapped: "+topos.size());
+        //log.info("Number of logical topologies mapped: "+topos.size());
         return topos;
     }
 
